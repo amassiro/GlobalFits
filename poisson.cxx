@@ -207,6 +207,36 @@ void poisson(){
 
 
 
+  //
+  // Confidence Belt
+  //
+
+  int nbins_mu = nbins*40;
+  TH2F * h_belt = new TH2F("h_belt", ";N;#mu", nbins, min, max, nbins_mu, min, max);
+
+  float delta_yy = 1. * (max-min) / (nbins_mu+1);
+  for (int ibins_mu = 0; ibins_mu<nbins_mu; ibins_mu++) {
+
+    float mu_temporary = min + delta_yy*ibins_mu;
+    f_poisson->SetParameter(0, mu_temporary);
+
+    for (int ii = 0; ii<nbins; ii++) {
+      h_belt->Fill(ii,mu_temporary,f_poisson->Eval(ii));
+    }
+
+  }
+
+  TCanvas *c7_belt = new TCanvas("c7_belt", "Confidence belt", 800, 600);
+
+  h_belt->Draw("colz");
+  h_belt->GetXaxis()->SetTitle("N");
+  h_belt->GetYaxis()->SetTitle("#mu");
+
+  gPad->SetGrid();
+
+
+
+
 }
 
 
