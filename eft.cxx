@@ -38,7 +38,7 @@ void eft(){
   TString function_definition = Form ("- 2 * log (TMath::Poisson([0],%s))", mu_definition.Data());
   std::cout << "function_definition = " << function_definition << std::endl;
   TF1 *f_m2LogLikelihood = new TF1("f_m2LogLikelihood", function_definition.Data(), min, max);
-  f_m2LogLikelihood->SetNpx(1000);
+  f_m2LogLikelihood->SetNpx(100);
 
   f_m2LogLikelihood->SetParameter(0, N_measured);
   f_m2LogLikelihood->SetTitle("-2 * Log Likelihood;c;-2 log P(N,c)");
@@ -59,7 +59,7 @@ void eft(){
 
 
   TF1 *f_delta = new TF1("f_delta", [f_m2LogLikelihood, y_min](double *x, double *par) { return f_m2LogLikelihood->Eval(x[0]) - y_min;}, min, max, 0);
-  f_delta->SetNpx(1000);
+  f_delta->SetNpx(100);
 
   TCanvas *c5_m2LogLikelihood_shifted = new TCanvas("c5_m2LogLikelihood_shifted", "-2 LogLikelihood shifted", 800, 600);
 
@@ -313,13 +313,13 @@ void eft(){
 
 
 
-  TCanvas *c10_chi2_alpha_beta = new TCanvas("c10_chi2_alpha_beta", "Chi2 #alpha, #beta", 1200, 500);
+  TCanvas *c10_chi2_alpha_beta = new TCanvas("c10_chi2_alpha_beta", "Chi2 #alpha, #beta", 1200, 250);
 
   c10_chi2_alpha_beta->Divide (3,1);
 
-  f_chi2_alpha_beta_shifted->SetNpx(1000);
-  f_chi2_alpha             ->SetNpx(1000);
-  f_chi2_beta              ->SetNpx(1000);
+  f_chi2_alpha_beta_shifted->SetNpx(100);
+  f_chi2_alpha             ->SetNpx(100);
+  f_chi2_beta              ->SetNpx(100);
 
   c10_chi2_alpha_beta->cd(1);
 
@@ -367,6 +367,106 @@ void eft(){
 
 
 
+
+  //
+  // 2D: two operators and two experiments
+  //
+
+  min_x = -20;  // min;
+  max_x =  20;  // max;
+  min_y = -20;  // min;
+  max_y =  20;  // max;
+
+
+  expected_yield_alpha_SM   = 12.5;
+  float expected_yield_alpha_Lin_A  = -1;
+  float expected_yield_alpha_Quad_A =  0.1;
+  float expected_yield_alpha_Lin_B  = 0.3;
+  float expected_yield_alpha_Quad_B =  0.05;
+  float expected_yield_alpha_Int_AB =  0.01;
+  N_measured_alpha = 14;
+
+  expected_yield_beta_SM   = 22.5;
+  float expected_yield_beta_Lin_A  = 1.5;
+  float expected_yield_beta_Quad_A =  0.1;
+  float expected_yield_beta_Lin_B  = -0.1;
+  float expected_yield_beta_Quad_B =  0.03;
+  float expected_yield_beta_Int_AB =  0.5;
+  N_measured_beta = 19;
+
+
+  auto chi2_func = [&](double *x, double *p) {
+    double A = x[0];
+    double B = x[1];
+
+    // Expected yield for alpha
+    double mu_alpha = expected_yield_alpha_SM
+    + A * expected_yield_alpha_Lin_A
+    + B * expected_yield_alpha_Lin_B
+    + A * A * expected_yield_alpha_Quad_A
+    + B * B * expected_yield_alpha_Quad_B
+    + A * B * expected_yield_alpha_Int_AB;
+
+    // Expected yield for beta
+    double mu_beta  = expected_yield_beta_SM
+    + A * expected_yield_beta_Lin_A
+    + B * expected_yield_beta_Lin_B
+    + A * A * expected_yield_beta_Quad_A
+    + B * B * expected_yield_beta_Quad_B
+    + A * B * expected_yield_beta_Int_AB;
+
+    double chi2_alpha = (N_measured_alpha - mu_alpha)*(N_measured_alpha - mu_alpha) / mu_alpha;
+    double chi2_beta  = (N_measured_beta  - mu_beta) * (N_measured_beta  - mu_beta) / mu_beta;
+
+    return chi2_alpha + chi2_beta;
+  };
+
+  TF2 *f2_chi2 = new TF2("f2_chi2", chi2_func, min_x, max_x, min_y, max_y, 0);
+  f2_chi2->SetNpx(250);
+  f2_chi2->SetNpy(250);
+
+  double A_min, B_min;
+  f2_chi2->GetMinimumXY(A_min, B_min);
+  double chi2_min = f2_chi2->Eval(A_min, B_min);
+
+  std::cout << "chi2_min = " << chi2_min << std::endl;
+
+
+  auto dchi2_func = [&](double *x, double *p) {
+    return chi2_func(x, p) - chi2_min;
+  };
+
+  TF2 *f2_dchi2 = new TF2("f2_dchi2", dchi2_func, -8, 8, -8, 8, 0);
+  f2_dchi2->SetTitle("#chi^{2};cA;cB;#chi^{2} (N,cA, cB)");
+  f2_dchi2->SetNpx(250);
+  f2_dchi2->SetNpy(250);
+
+  TCanvas *c1 = new TCanvas("c1", "EFT 2D Fit", 800, 600);
+  c1->SetRightMargin(0.15);
+
+  f2_dchi2->SetContour(100);
+  f2_dchi2->SetMinimum(0);
+  f2_dchi2->SetMaximum(15);
+  f2_dchi2->Draw("colz");
+  c1->Update();
+
+  TF2 *f2_68 = (TF2*)f2_dchi2->Clone("f2_68");
+  double level_68[1] = {2.30};
+  f2_68->SetContour(1, level_68);
+  f2_68->SetLineColor(kBlack);
+  f2_68->SetLineWidth(2);
+  f2_68->Draw("cont3 same");
+
+  TF2 *f2_95 = (TF2*)f2_dchi2->Clone("f2_95");
+  double level_95[1] = {5.99};
+  f2_95->SetContour(1, level_95);
+  f2_95->SetLineColor(kBlack);
+  f2_95->SetLineWidth(2);
+  f2_95->SetLineStyle(kDashed);
+  f2_95->Draw("cont3 same");
+
+
+  gPad->SetGrid();
 
 
 }
