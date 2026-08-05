@@ -8,7 +8,18 @@ void poisson(){
 
   float expected_yield = 12.5;
   int min = 0;
-  int max = 50;
+  int max = 30;
+
+  // gStyle->SetPalette(kViridis);
+  // gStyle->SetPalette(kBird);
+  // gStyle->SetPalette(kCividis);
+  gStyle->SetPalette(kCool);
+  // gStyle->SetPalette(kTemperatureMap);
+
+
+
+
+  int total_colors = gStyle->GetNumberOfColors();
 
   TF1 *f_poisson = new TF1("f_poisson", "TMath::Poisson(x, [0])", min, max);
 
@@ -16,7 +27,28 @@ void poisson(){
   f_poisson->SetTitle("Poisson Distribution;N;P(N)");
 
   TCanvas *c1_function = new TCanvas("c1_function", "Poisson Function", 800, 600);
-  f_poisson->Draw();
+  f_poisson->DrawClone();
+
+  TLegend *leg = new TLegend(0.68, 0.45, 0.88, 0.88);
+  leg->SetBorderSize(1);
+  leg->SetFillColor(kWhite);
+  leg->SetTextSize(0.03);
+
+  int num_of_curves = 20;
+  TCanvas *c1_many_function = new TCanvas("c1_many_function", "Poisson Functions", 800, 600);
+  for (int ii=0; ii<num_of_curves; ii++) {
+    f_poisson->SetParameter(0, ii*0.5);
+
+    int palette_idx = ii * (total_colors / num_of_curves);
+    int color = gStyle->GetColorPalette(palette_idx);
+    f_poisson->SetLineColor(color);
+
+    TObject *f_clone = f_poisson->DrawClone(ii == 0 ? "" : "same");
+    leg->AddEntry(f_clone, Form("#mu = %.1f", ii*0.5), "l");
+
+  }
+  leg->Draw();
+  c1_many_function->SetGrid();
 
 
 
@@ -24,7 +56,7 @@ void poisson(){
   // generate events
   //
 
-  int nEvents = 1000;
+  int nEvents = 10;
 
   int nbins = max-min;
 
@@ -75,7 +107,7 @@ void poisson(){
   // TF1 *f_likelihood = new TF1("f_likelihood", "TMath::Poisson([0], x)", min, max);
   TF1 *f_m2LogLikelihood = new TF1("f_m2LogLikelihood", "-2 * log (exp(-x) * TMath::Power(x, [0]) / TMath::Factorial([0]))", min, max);
   f_m2LogLikelihood->SetParameter(0, N_measured);
-  f_m2LogLikelihood->SetTitle("-2 * Log Likelihood;#mu;P(N,#mu)");
+  f_m2LogLikelihood->SetTitle("-2 * Log Likelihood;#mu;-2 log P(N,#mu)");
 
   TCanvas *c4_m2LogLikelihood = new TCanvas("c4_m2LogLikelihood", "-2 LogLikelihood", 800, 600);
   f_m2LogLikelihood->Draw();
@@ -92,7 +124,7 @@ void poisson(){
 
   TCanvas *c5_m2LogLikelihood_shifted = new TCanvas("c5_m2LogLikelihood_shifted", "-2 LogLikelihood shifted", 800, 600);
 
-  f_delta->SetTitle("-2 * Log Likelihood;#mu;P(N,#mu)");
+  f_delta->SetTitle("-2 * Log Likelihood;#mu;-2 log P(N,#mu)");
   f_delta->SetLineColor(kBlue + 1);
   f_delta->SetLineWidth(2);
   f_delta->Draw();
@@ -226,6 +258,10 @@ void poisson(){
 
   }
 
+  for (int bin = 0; bin < h_belt->GetNcells(); bin++) {
+    h_belt->SetBinError(bin, 0.0);
+  }
+
   TCanvas *c7_belt = new TCanvas("c7_belt", "Confidence belt", 800, 600);
 
   h_belt->Draw("colz");
@@ -237,6 +273,46 @@ void poisson(){
 
 
 
+  //
+  // Build a chi2
+  //
+
+  TF1 *f_chi2 = new TF1("f_chi2", "(x - [0])*(x - [0]) / [0]", min, max);
+  f_chi2->SetParameter(0, N_measured);
+  f_chi2->SetTitle("#chi^{2};#mu;#chi^{2} (N,#mu)");
+  f_chi2->SetLineColor(kBlue +1);
+
+  TCanvas *c8_chi2 = new TCanvas("c8_chi2", "Chi2", 800, 600);
+  f_chi2->Draw();
+
+  f_chi2->GetXaxis()->SetRangeUser(min_x_draw, max_x_draw);
+
+  llik_1->Draw();
+  llik_4->Draw();
+
+  x_min = f_chi2->GetMinimumX(min, max);
+  mu_low  = f_chi2->GetX(1.0, min, x_min);
+  mu_high = f_chi2->GetX(1.0, x_min, max);
+
+  TLine *l_low_chi2 = new TLine(mu_low, 0, mu_low, 1.0);
+  l_low_chi2->SetLineWidth(3);
+  l_low_chi2->SetLineColor(kRed);
+  l_low_chi2->SetLineStyle(3); // Dotted line
+  l_low_chi2->Draw();
+
+  TLine *l_high_chi2 = new TLine(mu_high, 0, mu_high, 1.0);
+  l_high_chi2->SetLineWidth(3);
+  l_high_chi2->SetLineColor(kRed);
+  l_high_chi2->SetLineStyle(3);
+  l_high_chi2->Draw();
+
+
+  c8_chi2->SetGrid();
+
+
+
+
 }
+
 
 
