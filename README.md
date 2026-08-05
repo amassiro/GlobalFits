@@ -9,4 +9,8 @@ Simple poisson:
     r99t poisson.cxx
 
 
+Simple EFT:
+
+    r99t eft.cxx
+
 
