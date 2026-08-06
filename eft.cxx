@@ -111,7 +111,7 @@ void eft(){
   // Build a chi2
   //
 
-  function_definition = Form ("(%s - [0])*(%s - [0]) / [0]" , mu_definition.Data(), mu_definition.Data());
+  function_definition = Form ("(%s - [0])*(%s - [0]) / (%s)" , mu_definition.Data(), mu_definition.Data(), mu_definition.Data());
   std::cout << "function_definition = " << function_definition << std::endl;
 
 
@@ -165,7 +165,7 @@ void eft(){
   mu_definition = Form ("%f + x * (%f) + x * x * (%f) + y * (%f) + y * y * (%f) + x * y * (%f)", expected_yield_SM, expected_yield_Lin_A, expected_yield_Quad_A, expected_yield_Lin_B, expected_yield_Quad_B, expected_yield_Int_AB);
   std::cout << "mu_definition = " << mu_definition << std::endl;
 
-  function_definition = Form ("(%s - [0])*(%s - [0]) / [0]" , mu_definition.Data(), mu_definition.Data());
+  function_definition = Form ("(%s - [0])*(%s - [0]) / (%s)" , mu_definition.Data(), mu_definition.Data(), mu_definition.Data());
   std::cout << "function_definition = " << function_definition << std::endl;
 
   float min_x = -20;  // min;
@@ -272,7 +272,7 @@ void eft(){
   TString mu_beta_definition = Form ("%f + x * (%f) + x * x * (%f)", expected_yield_beta_SM, expected_yield_beta_Lin, expected_yield_beta_Quad);
   std::cout << "mu_beta_definition = " << mu_beta_definition << std::endl;
 
-  function_definition = Form ("(%s - [0])*(%s - [0]) / [0] + (%s - [1])*(%s - [1]) / [1]" , mu_alpha_definition.Data(), mu_alpha_definition.Data(), mu_beta_definition.Data(), mu_beta_definition.Data());
+  function_definition = Form ("(%s - [0])*(%s - [0]) / (%s) + (%s - [1])*(%s - [1]) / (%s)" , mu_alpha_definition.Data(), mu_alpha_definition.Data(), mu_alpha_definition.Data(), mu_beta_definition.Data(), mu_beta_definition.Data(), mu_beta_definition.Data());
   std::cout << "function_definition = " << function_definition << std::endl;
 
   TF1 *f_chi2_alpha_beta = new TF1("f_chi2_alpha_beta", function_definition.Data(), min, max);
@@ -293,7 +293,7 @@ void eft(){
 
   mu_definition = Form ("%f + x * (%f) + x * x * (%f)", expected_yield_alpha_SM, expected_yield_alpha_Lin, expected_yield_alpha_Quad);
 
-  function_definition = Form ("(%s - [0])*(%s - [0]) / [0]" , mu_definition.Data(), mu_definition.Data());
+  function_definition = Form ("(%s - [0])*(%s - [0]) / (%s)" , mu_definition.Data(), mu_definition.Data(), mu_definition.Data());
   std::cout << "function_definition = " << function_definition << std::endl;
 
   TF1 *f_chi2_alpha = new TF1("f_chi2_alpha", function_definition.Data(), min, max);
@@ -303,7 +303,7 @@ void eft(){
 
   mu_definition = Form ("%f + x * (%f) + x * x * (%f)", expected_yield_beta_SM, expected_yield_beta_Lin, expected_yield_beta_Quad);
 
-  function_definition = Form ("(%s - [0])*(%s - [0]) / [0]" , mu_definition.Data(), mu_definition.Data());
+  function_definition = Form ("(%s - [0])*(%s - [0]) / (%s)" , mu_definition.Data(), mu_definition.Data(), mu_definition.Data());
   std::cout << "function_definition = " << function_definition << std::endl;
 
   TF1 *f_chi2_beta = new TF1("f_chi2_beta", function_definition.Data(), min, max);
@@ -391,80 +391,154 @@ void eft(){
   float expected_yield_beta_Quad_A =  0.1;
   float expected_yield_beta_Lin_B  = -0.1;
   float expected_yield_beta_Quad_B =  0.03;
-  float expected_yield_beta_Int_AB =  0.5;
-  N_measured_beta = 19;
+  float expected_yield_beta_Int_AB =  0.1;
+  N_measured_beta = 18;
 
 
-  auto chi2_func = [&](double *x, double *p) {
-    double A = x[0];
-    double B = x[1];
-
-    // Expected yield for alpha
-    double mu_alpha = expected_yield_alpha_SM
-    + A * expected_yield_alpha_Lin_A
-    + B * expected_yield_alpha_Lin_B
-    + A * A * expected_yield_alpha_Quad_A
-    + B * B * expected_yield_alpha_Quad_B
-    + A * B * expected_yield_alpha_Int_AB;
-
-    // Expected yield for beta
-    double mu_beta  = expected_yield_beta_SM
-    + A * expected_yield_beta_Lin_A
-    + B * expected_yield_beta_Lin_B
-    + A * A * expected_yield_beta_Quad_A
-    + B * B * expected_yield_beta_Quad_B
-    + A * B * expected_yield_beta_Int_AB;
-
-    double chi2_alpha = (N_measured_alpha - mu_alpha)*(N_measured_alpha - mu_alpha) / mu_alpha;
-    double chi2_beta  = (N_measured_beta  - mu_beta) * (N_measured_beta  - mu_beta) / mu_beta;
-
-    return chi2_alpha + chi2_beta;
-  };
-
-  TF2 *f2_chi2 = new TF2("f2_chi2", chi2_func, min_x, max_x, min_y, max_y, 0);
-  f2_chi2->SetNpx(250);
-  f2_chi2->SetNpy(250);
-
-  double A_min, B_min;
-  f2_chi2->GetMinimumXY(A_min, B_min);
-  double chi2_min = f2_chi2->Eval(A_min, B_min);
-
-  std::cout << "chi2_min = " << chi2_min << std::endl;
+  // expected_yield_beta_SM   = 22.5;
+  // float expected_yield_beta_Lin_A  = 1.5;
+  // float expected_yield_beta_Quad_A =  0.1;
+  // float expected_yield_beta_Lin_B  = -0.1;
+  // float expected_yield_beta_Quad_B =  0.03;
+  // float expected_yield_beta_Int_AB =  0.5;
+  // N_measured_beta = 19;
 
 
-  auto dchi2_func = [&](double *x, double *p) {
-    return chi2_func(x, p) - chi2_min;
-  };
+  mu_alpha_definition = Form ("%f + x * (%f) + x * x * (%f) + y * (%f) + y * y * (%f) + x * y * (%f)", expected_yield_alpha_SM, expected_yield_alpha_Lin_A, expected_yield_alpha_Quad_A, expected_yield_alpha_Lin_B, expected_yield_alpha_Quad_B, expected_yield_alpha_Int_AB);
+  mu_beta_definition = Form ("%f + x * (%f) + x * x * (%f) + y * (%f) + y * y * (%f) + x * y * (%f)", expected_yield_beta_SM, expected_yield_beta_Lin_A, expected_yield_beta_Quad_A, expected_yield_beta_Lin_B, expected_yield_beta_Quad_B, expected_yield_beta_Int_AB);
 
-  TF2 *f2_dchi2 = new TF2("f2_dchi2", dchi2_func, -8, 8, -8, 8, 0);
-  f2_dchi2->SetTitle("#chi^{2};cA;cB;#chi^{2} (N,cA, cB)");
-  f2_dchi2->SetNpx(250);
-  f2_dchi2->SetNpy(250);
+  function_definition = Form ("(%s - [0])*(%s - [0]) / (%s) + (%s - [1])*(%s - [1]) / (%s)" , mu_alpha_definition.Data(), mu_alpha_definition.Data(), mu_alpha_definition.Data(), mu_beta_definition.Data(), mu_beta_definition.Data(), mu_beta_definition.Data());
+  std::cout << "function_definition = " << function_definition << std::endl;
 
-  TCanvas *c1 = new TCanvas("c1", "EFT 2D Fit", 800, 600);
-  c1->SetRightMargin(0.15);
+  TF2 *f_alpha_beta_chi2_2D = new TF2("f_alpha_beta_chi2_2D", function_definition.Data(), min_x, max_x, min_y, max_y);
 
-  f2_dchi2->SetContour(100);
-  f2_dchi2->SetMinimum(0);
-  f2_dchi2->SetMaximum(15);
-  f2_dchi2->Draw("colz");
-  c1->Update();
+  function_definition = Form ("(%s - [0])*(%s - [0]) / (%s)" , mu_alpha_definition.Data(), mu_alpha_definition.Data(), mu_alpha_definition.Data());
+  TF2 *f_alpha_chi2_2D = new TF2("f_alpha_chi2_2D", function_definition.Data(), min_x, max_x, min_y, max_y);
+  f_alpha_chi2_2D->SetParameter(0, N_measured_alpha);
+  f_alpha_chi2_2D->SetTitle("#chi^{2};cA;cB;#chi^{2} (N,cA, cB)");
 
-  TF2 *f2_68 = (TF2*)f2_dchi2->Clone("f2_68");
-  double level_68[1] = {2.30};
-  f2_68->SetContour(1, level_68);
-  f2_68->SetLineColor(kBlack);
-  f2_68->SetLineWidth(2);
-  f2_68->Draw("cont3 same");
+  function_definition = Form ("(%s - [0])*(%s - [0]) / (%s)" , mu_beta_definition.Data(), mu_beta_definition.Data(), mu_beta_definition.Data());
+  TF2 *f_beta_chi2_2D  = new TF2("f_beta_chi2_2D" , function_definition.Data(), min_x, max_x, min_y, max_y);
+  f_beta_chi2_2D->SetParameter(0, N_measured_beta);
+  f_beta_chi2_2D->SetTitle("#chi^{2};cA;cB;#chi^{2} (N,cA, cB)");
 
-  TF2 *f2_95 = (TF2*)f2_dchi2->Clone("f2_95");
-  double level_95[1] = {5.99};
-  f2_95->SetContour(1, level_95);
-  f2_95->SetLineColor(kBlack);
-  f2_95->SetLineWidth(2);
-  f2_95->SetLineStyle(kDashed);
-  f2_95->Draw("cont3 same");
+  f_alpha_beta_chi2_2D->SetNpx(100);
+  f_alpha_beta_chi2_2D->SetNpx(100);
 
+  f_alpha_beta_chi2_2D->SetParameter(0, N_measured_alpha);
+  f_alpha_beta_chi2_2D->SetParameter(1, N_measured_beta);
+  f_alpha_beta_chi2_2D->SetTitle("#chi^{2};cA;cB;#chi^{2} (N,cA, cB)");
+  f_alpha_beta_chi2_2D->SetLineColor(kBlue +1);
+
+  TCanvas *c11_alpha_beta_chi2_2D = new TCanvas("c11_alpha_beta_chi2_2D", "Chi2 cA cB", 800, 600);
+
+  f_alpha_beta_chi2_2D->GetMinimumXY(x_min, y_min);
+  z_min = f_alpha_beta_chi2_2D->Eval(x_min, y_min);
+
+  // x_min = 0;
+  // y_min = 0;
+  // z_min = 0;
+
+  std::cout << " ---- " << std::endl;
+  std::cout << "minimum [" << x_min << " , " << y_min << "] = " << z_min << std::endl;
+  std::cout << " ---- " << std::endl;
+
+  TF2 *f_alpha_beta_chi2_2D_shifted = new TF2("f_alpha_beta_chi2_2D_shifted", [f_alpha_beta_chi2_2D, z_min](double *x, double *par) { return f_alpha_beta_chi2_2D->Eval(x[0], x[1]) - z_min;}, min_x, max_x, min_y, max_y, 0);
+
+  f_alpha_beta_chi2_2D_shifted->SetTitle("#chi^{2};cA;cB;#chi^{2} (N,cA, cB)");
+  f_alpha_beta_chi2_2D_shifted->SetContour(100);
+  f_alpha_beta_chi2_2D_shifted->SetMaximum(30.0);
+  f_alpha_beta_chi2_2D_shifted->DrawClone("colz");
+
+
+  TF2 *f_alpha_beta_chi2_2D_shifted_contour = (TF2*) f_alpha_beta_chi2_2D_shifted->Clone("f_alpha_beta_chi2_2D_shifted_contour");
+
+  // double levels[1] = {2.30};
+  f_alpha_beta_chi2_2D_shifted_contour->SetContour(1, levels);
+
+  f_alpha_beta_chi2_2D_shifted_contour->SetLineColor(kRed);
+  f_alpha_beta_chi2_2D_shifted_contour->SetLineWidth(3);
+  f_alpha_beta_chi2_2D_shifted_contour->SetLineStyle(1);
+
+  f_alpha_beta_chi2_2D_shifted_contour->DrawClone("cont3 same");
+
+
+  TCanvas *c11_alpha_chi2_2D = new TCanvas("c11_alpha_chi2_2D", "Chi2 cA cB", 800, 600);
+  f_alpha_chi2_2D->GetMinimumXY(x_min, y_min);
+  z_min = f_alpha_chi2_2D->Eval(x_min, y_min);
+
+  TF2 *f_alpha_chi2_2D_shifted = new TF2("f_alpha_chi2_2D_shifted", [f_alpha_chi2_2D, z_min](double *x, double *par) { return f_alpha_chi2_2D->Eval(x[0], x[1]) - z_min;}, min_x, max_x, min_y, max_y, 0);
+
+  f_alpha_chi2_2D_shifted->SetTitle("#chi^{2};cA;cB;#chi^{2} (N,cA, cB)");
+  f_alpha_chi2_2D_shifted->SetContour(100);
+  f_alpha_chi2_2D_shifted->SetMaximum(30.0);
+  f_alpha_chi2_2D_shifted->DrawClone("colz");
+
+  TF2 *f_alpha_chi2_2D_shifted_contour = (TF2*) f_alpha_chi2_2D_shifted->Clone("f_alpha_chi2_2D_shifted_contour");
+
+  f_alpha_chi2_2D_shifted_contour->SetContour(1, levels);
+
+  f_alpha_chi2_2D_shifted_contour->SetLineColor(kRed);
+  f_alpha_chi2_2D_shifted_contour->SetLineWidth(3);
+  f_alpha_chi2_2D_shifted_contour->SetLineStyle(1);
+
+  f_alpha_chi2_2D_shifted_contour->DrawClone("cont3 same");
+
+
+
+
+
+
+  TCanvas *c11_beta_chi2_2D = new TCanvas("c11_beta_chi2_2D", "Chi2 cA cB", 800, 600);
+  f_beta_chi2_2D->GetMinimumXY(x_min, y_min);
+  z_min = f_beta_chi2_2D->Eval(x_min, y_min);
+
+  TF2 *f_beta_chi2_2D_shifted = new TF2("f_beta_chi2_2D_shifted", [f_beta_chi2_2D, z_min](double *x, double *par) { return f_beta_chi2_2D->Eval(x[0], x[1]) - z_min;}, min_x, max_x, min_y, max_y, 0);
+
+  f_beta_chi2_2D_shifted->SetTitle("#chi^{2};cA;cB;#chi^{2} (N,cA, cB)");
+  f_beta_chi2_2D_shifted->SetContour(100);
+  f_beta_chi2_2D_shifted->SetMaximum(30.0);
+  f_beta_chi2_2D_shifted->DrawClone("colz");
+
+  TF2 *f_beta_chi2_2D_shifted_contour = (TF2*) f_beta_chi2_2D_shifted->Clone("f_beta_chi2_2D_shifted_contour");
+
+  f_beta_chi2_2D_shifted_contour->SetContour(1, levels);
+
+  f_beta_chi2_2D_shifted_contour->SetLineColor(kRed);
+  f_beta_chi2_2D_shifted_contour->SetLineWidth(3);
+  f_beta_chi2_2D_shifted_contour->SetLineStyle(1);
+
+  f_beta_chi2_2D_shifted_contour->DrawClone("cont3 same");
+
+
+
+  c11_alpha_beta_chi2_2D->cd();
+
+  f_alpha_chi2_2D_shifted_contour->SetLineColor(kRed+4);
+  f_beta_chi2_2D_shifted_contour->SetLineColor(kRed+4);
+  f_alpha_chi2_2D_shifted_contour->SetLineStyle(2);
+  f_beta_chi2_2D_shifted_contour->SetLineStyle(2);
+
+  f_alpha_chi2_2D_shifted_contour->DrawClone("cont3 same");
+  f_beta_chi2_2D_shifted_contour->DrawClone("cont3 same");
+
+
+
+  // TF2 *f2_68 = (TF2*)f2_dchi2->Clone("f2_68");
+  // double level_68[1] = {2.30};
+  // f2_68->SetContour(1, level_68);
+  // f2_68->SetLineColor(kBlack);
+  // f2_68->SetLineWidth(2);
+  // f2_68->Draw("cont3 same");
+  //
+  // TF2 *f2_95 = (TF2*)f2_dchi2->Clone("f2_95");
+  // double level_95[1] = {5.99};
+  // f2_95->SetContour(1, level_95);
+  // f2_95->SetLineColor(kBlack);
+  // f2_95->SetLineWidth(2);
+  // f2_95->SetLineStyle(kDashed);
+  // f2_95->Draw("cont3 same");
+  //
 
   gPad->SetGrid();
 

@@ -277,7 +277,8 @@ void poisson(){
   // Build a chi2
   //
 
-  TF1 *f_chi2 = new TF1("f_chi2", "(x - [0])*(x - [0]) / [0]", min, max);
+  // TF1 *f_chi2 = new TF1("f_chi2", "(x - [0])*(x - [0]) / [0]", min, max);
+  TF1 *f_chi2 = new TF1("f_chi2", "(x - [0])*(x - [0]) / x", min, max);
   f_chi2->SetParameter(0, N_measured);
   f_chi2->SetTitle("#chi^{2};#mu;#chi^{2} (N,#mu)");
   f_chi2->SetLineColor(kBlue +1);
