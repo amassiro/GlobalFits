@@ -13,4 +13,12 @@ Simple EFT:
 
     r99t eft.cxx
 
+Plain Python version:
 
+
+    python3 -m venv myGlobalFit
+
+    source myGlobalFit/bin/activate
+
+    pip install matplotlib numpy scipy
+    python3 eft.py
