@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-set -euo pipefail
+
+# set -euo pipefail
 
 # --- config ---------------------------------------------------------------
 # MG5_DIR="$PWD/MG5_aMC_v2_9_27"
 MG5_DIR="$PWD/MG5_aMC_v3_7_2"
 MODEL="SMEFTsim_topU3l_MwScheme_UFO"
-RESTRICT="cHWB_massless"          # restrict_cHWB_massless.dat: every operator fixed=0
+RESTRICT="cHWB_massless"           # restrict_cHWB_massless.dat: every operator fixed=0
                                    # except cHWB, set to a generic non-special placeholder
                                    # (9.999999e-01, not exactly 1) -- since that value isn't
                                    # "special" (0 or 1), MG5 keeps cHWB as an external/settable
@@ -15,7 +16,6 @@ RESTRICT="cHWB_massless"          # restrict_cHWB_massless.dat: every operator f
                                    # decomposition (sigma(c) = sigma_SM + c*sigma_lin +
                                    # c^2*sigma_quad), AND PROC_cHWB_NP1's reweight_card, which
                                    # needs cHWB to stay externally settable.
-
 
 PROC_DIR="$MG5_DIR/proc_cards"
 mkdir -p "$PROC_DIR"
@@ -104,18 +104,20 @@ EOF
 #
 #
 #
-sed -i -e 's/.*= fixed_ren_scale/ True = fixed_ren_scale/' \
-       -e 's/.*= fixed_fac_scale/ True = fixed_fac_scale/' "$OUT_NP1/Cards/run_card.dat"
 
-sed -i -e 's/.*= fixed_ren_scale/ True = fixed_ren_scale/' \
-       -e 's/.*= fixed_fac_scale/ True = fixed_fac_scale/' "$OUT_SM/Cards/run_card.dat"
+if [ "$1" == "fixed" ]; then
+    sed -i -e 's/.*= fixed_ren_scale/ True = fixed_ren_scale/' \
+           -e 's/.*= fixed_fac_scale/ True = fixed_fac_scale/' "$OUT_NP1/Cards/run_card.dat"
 
-sed -i -e 's/.*= fixed_ren_scale/ True = fixed_ren_scale/' \
-       -e 's/.*= fixed_fac_scale/ True = fixed_fac_scale/' "$OUT_LIN/Cards/run_card.dat"
+    sed -i -e 's/.*= fixed_ren_scale/ True = fixed_ren_scale/' \
+           -e 's/.*= fixed_fac_scale/ True = fixed_fac_scale/' "$OUT_SM/Cards/run_card.dat"
 
-sed -i -e 's/.*= fixed_ren_scale/ True = fixed_ren_scale/' \
-       -e 's/.*= fixed_fac_scale/ True = fixed_fac_scale/' "$OUT_QUAD/Cards/run_card.dat"
+    sed -i -e 's/.*= fixed_ren_scale/ True = fixed_ren_scale/' \
+           -e 's/.*= fixed_fac_scale/ True = fixed_fac_scale/' "$OUT_LIN/Cards/run_card.dat"
 
+    sed -i -e 's/.*= fixed_ren_scale/ True = fixed_ren_scale/' \
+           -e 's/.*= fixed_fac_scale/ True = fixed_fac_scale/' "$OUT_QUAD/Cards/run_card.dat"
+fi
 
 
 
