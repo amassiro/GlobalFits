@@ -16,19 +16,6 @@ RESTRICT="cHWB_massless"          # restrict_cHWB_massless.dat: every operator f
                                    # c^2*sigma_quad), AND PROC_cHWB_NP1's reweight_card, which
                                    # needs cHWB to stay externally settable.
 
-#
-# change the run card to fix the renormalization and factorization scate to mZ
-#
-#
-# False = fixed_ren_scale  ! if .true. use fixed ren scale
-# False = fixed_fac_scale  ! if .true. use fixed fac scale
-#
-# Below:
-#
-# set fixed_ren_scale .true.
-# set fixed_fac_scale .true.
-#
-#
 
 PROC_DIR="$MG5_DIR/proc_cards"
 mkdir -p "$PROC_DIR"
@@ -46,8 +33,6 @@ set auto_convert_model T
 import model $MODEL-$RESTRICT
 generate p p > l+ l- NP=1
 output $OUT_NP1
-set fixed_ren_scale .true.
-set fixed_fac_scale .true.
 EOF
 
 # 2) NP=0 -> pure SM
@@ -56,8 +41,6 @@ set auto_convert_model T
 import model $MODEL-$RESTRICT
 generate p p > l+ l- NP=0
 output $OUT_SM
-set fixed_ren_scale .true.
-set fixed_fac_scale .true.
 EOF
 
 # 3) NP=1 NP^2==1 -> linear (SM x EFT interference) only
@@ -66,8 +49,6 @@ set auto_convert_model T
 import model $MODEL-$RESTRICT
 generate p p > l+ l- NP=1 NP^2==1
 output $OUT_LIN
-set fixed_ren_scale .true.
-set fixed_fac_scale .true.
 EOF
 
 # 4) NP=1 NP^2==2 -> quadratic (pure EFT^2) only
@@ -76,8 +57,6 @@ set auto_convert_model T
 import model $MODEL-$RESTRICT
 generate p p > l+ l- NP=1 NP^2==2
 output $OUT_QUAD
-set fixed_ren_scale .true.
-set fixed_fac_scale .true.
 EOF
 
 # --- run MG5 to actually produce the 4 output directories -----------------
@@ -114,6 +93,29 @@ launch --rwgt_name=cHWB_p1
 launch --rwgt_name=cHWB_m1
   set SMEFT 9 -1.0
 EOF
+
+
+#
+# change the run card to fix the renormalization and factorization scate to mZ
+#
+#
+# False = fixed_ren_scale  ! if .true. use fixed ren scale
+# False = fixed_fac_scale  ! if .true. use fixed fac scale
+#
+#
+#
+sed -i -e 's/.*= fixed_ren_scale/ True = fixed_ren_scale/' \
+       -e 's/.*= fixed_fac_scale/ True = fixed_fac_scale/' "$OUT_NP1/Cards/run_card.dat"
+
+sed -i -e 's/.*= fixed_ren_scale/ True = fixed_ren_scale/' \
+       -e 's/.*= fixed_fac_scale/ True = fixed_fac_scale/' "$OUT_SM/Cards/run_card.dat"
+
+sed -i -e 's/.*= fixed_ren_scale/ True = fixed_ren_scale/' \
+       -e 's/.*= fixed_fac_scale/ True = fixed_fac_scale/' "$OUT_LIN/Cards/run_card.dat"
+
+sed -i -e 's/.*= fixed_ren_scale/ True = fixed_ren_scale/' \
+       -e 's/.*= fixed_fac_scale/ True = fixed_fac_scale/' "$OUT_QUAD/Cards/run_card.dat"
+
 
 
 
