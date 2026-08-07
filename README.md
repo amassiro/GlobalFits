@@ -21,4 +21,11 @@ Plain Python version:
     source myGlobalFit/bin/activate
 
     pip install matplotlib numpy scipy
+
     python3 eft.py
+
+    python3 poisson.py
+
+
+    deactivate
+
