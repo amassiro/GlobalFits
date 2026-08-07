@@ -29,3 +29,19 @@ Plain Python version:
 
     deactivate
 
+
+MG and SMEFT
+
+    ./setup.sh
+
+    ./create.sh
+
+    ./analysis.sh
+
+
+
+NB:
+
+    sudo apt install meson ninja-build
+
+

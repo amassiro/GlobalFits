@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # --- config ---------------------------------------------------------------
-MG5_DIR="$PWD/MG5_aMC_v2_9_27"
+# MG5_DIR="$PWD/MG5_aMC_v2_9_27"
+MG5_DIR="$PWD/MG5_aMC_v3_7_2"
 MODEL="SMEFTsim_topU3l_MwScheme_UFO"
 RESTRICT="cHWB_massless"          # restrict_cHWB_massless.dat: every operator fixed=0
                                    # except cHWB, set to a generic non-special placeholder
@@ -15,10 +16,24 @@ RESTRICT="cHWB_massless"          # restrict_cHWB_massless.dat: every operator f
                                    # c^2*sigma_quad), AND PROC_cHWB_NP1's reweight_card, which
                                    # needs cHWB to stay externally settable.
 
+#
+# change the run card to fix the renormalization and factorization scate to mZ
+#
+#
+# False = fixed_ren_scale  ! if .true. use fixed ren scale
+# False = fixed_fac_scale  ! if .true. use fixed fac scale
+#
+# Below:
+#
+# set fixed_ren_scale TRUE
+# set fixed_fac_scale TRUE
+#
+#
+
 PROC_DIR="$MG5_DIR/proc_cards"
 mkdir -p "$PROC_DIR"
 
-OUT_NP1="$MG5_DIR/PROC_cHWB_NP1"           # 1) NP=1, cHWB on
+OUT_NP1="$MG5_DIR/PROC_cHWB_NP1"            # 1) NP=1, cHWB on
 OUT_SM="$MG5_DIR/PROC_SM_NP0"               # 2) NP=0, pure SM
 OUT_LIN="$MG5_DIR/PROC_cHWB_linear"         # 3) NP=1 NP^2==1, interference
 OUT_QUAD="$MG5_DIR/PROC_cHWB_quadratic"     # 4) NP=1 NP^2==2, pure EFT^2
@@ -31,6 +46,8 @@ set auto_convert_model T
 import model $MODEL-$RESTRICT
 generate p p > l+ l- NP=1
 output $OUT_NP1
+set fixed_ren_scale TRUE
+set fixed_fac_scale TRUE
 EOF
 
 # 2) NP=0 -> pure SM
@@ -39,6 +56,8 @@ set auto_convert_model T
 import model $MODEL-$RESTRICT
 generate p p > l+ l- NP=0
 output $OUT_SM
+set fixed_ren_scale TRUE
+set fixed_fac_scale TRUE
 EOF
 
 # 3) NP=1 NP^2==1 -> linear (SM x EFT interference) only
@@ -47,6 +66,8 @@ set auto_convert_model T
 import model $MODEL-$RESTRICT
 generate p p > l+ l- NP=1 NP^2==1
 output $OUT_LIN
+set fixed_ren_scale TRUE
+set fixed_fac_scale TRUE
 EOF
 
 # 4) NP=1 NP^2==2 -> quadratic (pure EFT^2) only
@@ -55,6 +76,8 @@ set auto_convert_model T
 import model $MODEL-$RESTRICT
 generate p p > l+ l- NP=1 NP^2==2
 output $OUT_QUAD
+set fixed_ren_scale TRUE
+set fixed_fac_scale TRUE
 EOF
 
 # --- run MG5 to actually produce the 4 output directories -----------------

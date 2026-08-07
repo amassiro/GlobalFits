@@ -3,14 +3,20 @@ set -euo pipefail
 
 ROOT_DIR="$PWD"
 
-if [ -d "$ROOT_DIR/MG5_aMC_v2_9_27" ]; then
-    echo "[skip] MG5_aMC_v2_9_27 already exists -> skipping download"
+# if [ -d "$ROOT_DIR/MG5_aMC_v2_9_27" ]; then
+#     echo "[skip] MG5_aMC_v2_9_27 already exists -> skipping download"
+if [ -d "$ROOT_DIR/MG5_aMC_v3_7_2" ]; then
+    echo "[skip] MG5_aMC_v3_7_2 already exists -> skipping download"
 else
-    wget https://launchpad.net/mg5amcnlo/lts/2.9.x/+download/MG5_aMC_v2.9.27.tar.gz
-    tar -axvf MG5_aMC_v2.9.27.tar.gz
-    rm MG5_aMC_v2.9.27.tar.gz
+    wget https://launchpad.net/mg5amcnlo/3.0/3.7.x/+download/MG5_aMC_v3.7.2.tar.gz
+    tar -axvf MG5_aMC_v3.7.2.tar.gz
+    rm MG5_aMC_v3.7.2.tar.gz
+#     wget https://launchpad.net/mg5amcnlo/lts/2.9.x/+download/MG5_aMC_v2.9.27.tar.gz
+#     tar -axvf MG5_aMC_v2.9.27.tar.gz
+#     rm MG5_aMC_v2.9.27.tar.gz
 fi
-cd "$ROOT_DIR/MG5_aMC_v2_9_27/models"
+# cd "$ROOT_DIR/MG5_aMC_v2_9_27/models"
+cd "$ROOT_DIR/MG5_aMC_v3_7_2/models"
 
 if [ -d "SMEFTsim_topU3l_MwScheme_UFO" ]; then
     echo "[skip] SMEFTsim_topU3l_MwScheme_UFO already exists -> skipping clone"
@@ -58,7 +64,10 @@ fi
 # Fix: generate a single-token wrapper script around a python3 this script
 # has actually verified has a working numpy.f2py, and point MG5's config at
 # that wrapper instead of the real (multi-word) command.
-MG5_DIR="$ROOT_DIR/MG5_aMC_v2_9_27"
+
+# MG5_DIR="$ROOT_DIR/MG5_aMC_v2_9_27"
+MG5_DIR="$ROOT_DIR/MG5_aMC_v3_7_2"
+
 
 echo "==> Looking for a working python3 + numpy.f2py ..."
 PYTHON3=""

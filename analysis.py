@@ -153,7 +153,8 @@ def ratio_with_unc(a: np.ndarray, a_var: np.ndarray, b: np.ndarray, b_var: np.nd
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                   formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--root", default=".", help="MASSIRO root dir (contains MG5_aMC_v2_9_27/)")
+    # ap.add_argument("--root", default=".", help="MASSIRO root dir (contains MG5_aMC_v2_9_27/)")
+    ap.add_argument("--root", default=".", help="MASSIRO root dir (contains MG5_aMC_v3_7_2/)")
     ap.add_argument("--bins", type=int, default=60)
     ap.add_argument("--mass-min", type=float, default=20.0)
     ap.add_argument("--mass-max", type=float, default=500.0)
@@ -163,7 +164,10 @@ def main():
                           "so log is not offered -- symlog handles sign.")
     args = ap.parse_args()
 
-    mg5_dir = Path(args.root) / "MG5_aMC_v2_9_27"
+
+
+    # mg5_dir = Path(args.root) / "MG5_aMC_v2_9_27"
+    mg5_dir = Path(args.root) / "MG5_aMC_v3_7_2"
     sm_file = require(mg5_dir / "PROC_SM_NP0" / "Events" / "run_01" / "unweighted_events.lhe.gz")
     lin_file = require(mg5_dir / "PROC_cHWB_linear" / "Events" / "run_01" / "unweighted_events.lhe.gz")
     quad_file = require(mg5_dir / "PROC_cHWB_quadratic" / "Events" / "run_01" / "unweighted_events.lhe.gz")
