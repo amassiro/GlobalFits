@@ -78,6 +78,7 @@ pylhe
 
     python3 pylhe_example.py
 
+    python3 pylhe_z_pt.py
 
 
 
