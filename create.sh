@@ -25,8 +25,8 @@ RESTRICT="cHWB_massless"          # restrict_cHWB_massless.dat: every operator f
 #
 # Below:
 #
-# set fixed_ren_scale TRUE
-# set fixed_fac_scale TRUE
+# set fixed_ren_scale .true.
+# set fixed_fac_scale .true.
 #
 #
 
@@ -46,8 +46,8 @@ set auto_convert_model T
 import model $MODEL-$RESTRICT
 generate p p > l+ l- NP=1
 output $OUT_NP1
-set fixed_ren_scale TRUE
-set fixed_fac_scale TRUE
+set fixed_ren_scale .true.
+set fixed_fac_scale .true.
 EOF
 
 # 2) NP=0 -> pure SM
@@ -56,8 +56,8 @@ set auto_convert_model T
 import model $MODEL-$RESTRICT
 generate p p > l+ l- NP=0
 output $OUT_SM
-set fixed_ren_scale TRUE
-set fixed_fac_scale TRUE
+set fixed_ren_scale .true.
+set fixed_fac_scale .true.
 EOF
 
 # 3) NP=1 NP^2==1 -> linear (SM x EFT interference) only
@@ -66,8 +66,8 @@ set auto_convert_model T
 import model $MODEL-$RESTRICT
 generate p p > l+ l- NP=1 NP^2==1
 output $OUT_LIN
-set fixed_ren_scale TRUE
-set fixed_fac_scale TRUE
+set fixed_ren_scale .true.
+set fixed_fac_scale .true.
 EOF
 
 # 4) NP=1 NP^2==2 -> quadratic (pure EFT^2) only
@@ -76,19 +76,25 @@ set auto_convert_model T
 import model $MODEL-$RESTRICT
 generate p p > l+ l- NP=1 NP^2==2
 output $OUT_QUAD
-set fixed_ren_scale TRUE
-set fixed_fac_scale TRUE
+set fixed_ren_scale .true.
+set fixed_fac_scale .true.
 EOF
 
 # --- run MG5 to actually produce the 4 output directories -----------------
 run_proc_card() {
     local pc="$1"
     local out_dir="$2"
+#     if [ -d "$out_dir" ]; then
+#         echo "[skip] $out_dir already exists -> skipping output generation for $pc"
+#     else
+#         "$MG5_DIR/bin/mg5_aMC" "$PROC_DIR/${pc}.dat"
+#     fi
     if [ -d "$out_dir" ]; then
-        echo "[skip] $out_dir already exists -> skipping output generation for $pc"
-    else
-        "$MG5_DIR/bin/mg5_aMC" "$PROC_DIR/${pc}.dat"
+        echo "[skip] $out_dir already exists -> removing it and rerun for $pc"
+        rm -r $out_dir
     fi
+    "$MG5_DIR/bin/mg5_aMC" "$PROC_DIR/${pc}.dat"
+
 }
 
 run_proc_card proc_card_1_NP1_cHWB   "$OUT_NP1"
