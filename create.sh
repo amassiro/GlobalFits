@@ -73,6 +73,54 @@ run_proc_card proc_card_2_SM         "$OUT_SM"
 run_proc_card proc_card_3_linear     "$OUT_LIN"
 run_proc_card proc_card_4_quadratic  "$OUT_QUAD"
 
+# --- force a consistent dynamical_scale_choice across all 4 processes -----
+# MG5 (madgraph/various/banner.py, ~line 3598) auto-detects "interference"
+# process definitions by grepping the process string for the literal '^2'.
+# PROC_cHWB_linear (NP^2==1) and PROC_cHWB_quadratic (NP^2==2) both match ->
+# MG5 silently overrides their dynamical_scale_choice away from the true
+# default (-1, CKKW back-clustering) to 3 (HT/2). PROC_cHWB_NP1 (NP=1) and
+# PROC_SM_NP0 (NP=0) don't contain '^2' -> they keep -1. This isn't
+# cosmetic: the scale is recomputed per-event from kinematics and feeds
+# both alpha_s running and PDF evaluation, so a mismatch breaks the
+# SM+Lin+Quad = NP1 decomposition at the integrand level -- left as MG5
+# sets it, this produced a ~32 pb / 12.7 sigma gap between NP1 and
+# SM+Lin+Quad that was entirely explained by (and resolved to ~0.2 sigma
+# by fixing) this mismatch. Force all 4 to -1 here so it can't silently
+# reappear on a clean regeneration.
+#
+# The same '^2' auto-detection also forces use_syst=False and
+# systematics_program='none' for PROC_cHWB_linear/quadratic (banner.py,
+# same function, ~line 3612-3614) -- and unlike dynamical_scale_choice,
+# this one is *not* a silent MG5 quirk: it's flagged twice, deliberately,
+# by MG5's own authors. banner.py's comment reads verbatim "For
+# interference module, the systematics are wrong", and Lin/Quad's
+# run_card.dat template carries its own boilerplate warning directly above
+# the use_syst line: "WARNING: Do not use for interference type of
+# computation". The root cause: MG5's `systematics` reweighting assumes an
+# event's weight is a plain |M|^2 at some (x1,x2,muR,muF) that can be
+# rescaled by PDF/alpha_s ratios between the nominal and varied points.
+# Lin's weight is an SM*EFT interference term and Quad's is a pure EFT^2
+# term -- neither is a single |M|^2 -- so MG5's own reweighting machinery
+# is not claimed to handle them correctly.
+#
+# Forced on anyway below (explicit request, to get scale/PDF bands on
+# every panel of analysis.py's plot instead of only SM/NP1's). Treat
+# Lin/Quad's bands -- and SM+Lin+Quad's, which sums them -- as indicative,
+# not a validated uncertainty; analysis.py labels them accordingly rather
+# than presenting them at face value. sde_strategy (also flipped by the
+# same MG5 override, to 2) is left untouched: it's a phase-space
+# integration setting, not a systematics one, and wasn't implicated in
+# either issue above.
+for OUT in "$OUT_NP1" "$OUT_SM" "$OUT_LIN" "$OUT_QUAD"; do
+    RUNCARD="$OUT/Cards/run_card.dat"
+    sed -E -i.bak \
+        -e 's/^([[:space:]]*)-?[0-9]+([[:space:]]+= dynamical_scale_choice)/\1-1\2/' \
+        -e 's/^([[:space:]]*)False([[:space:]]+= use_syst)/\1True\2/' \
+        -e 's/^none([[:space:]]+= systematics_program)/systematics\1/' \
+        "$RUNCARD"
+    rm -f "$RUNCARD.bak"
+done
+
 # --- reweight card for option 1: cHWB = 0, +1, -1 (Block SMEFT, idx 9) ----
 mkdir -p "$OUT_NP1/Cards"
 cat > "$OUT_NP1/Cards/reweight_card.dat" <<EOF

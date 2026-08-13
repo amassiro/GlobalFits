@@ -129,23 +129,111 @@ else
     echo "==> Skipping f2py smoke test (no gfortran) -- install it, then rerun setup.sh."
 fi
 
+# Generic "set key = value in this mg5_configuration.txt" helper -- strips
+# any existing (commented-out or live) line for that key and appends the new
+# value, so reruns are idempotent no matter what state the file was in.
+# Shared below by both the f2py_compiler_py3 patch and the lhapdf patch.
 patch_config() {
-    local cfg="$1"
+    local cfg="$1" key="$2" value="$3"
     [ -f "$cfg" ] || return 0
-    if grep -qF "f2py_compiler_py3 = $WRAPPER" "$cfg" 2>/dev/null; then
-        echo "[skip] $cfg already points at the wrapper"; return 0
+    if grep -qF "$key = $value" "$cfg" 2>/dev/null; then
+        echo "[skip] $cfg already points $key at $value"; return 0
     fi
     local tmp="$cfg.tmp.$$"
-    grep -v -E '^#?[[:space:]]*f2py_compiler_py3[[:space:]]*=' "$cfg" > "$tmp"
-    printf 'f2py_compiler_py3 = %s\n' "$WRAPPER" >> "$tmp"
+    grep -v -E "^#?[[:space:]]*${key}[[:space:]]*=" "$cfg" > "$tmp"
+    printf '%s = %s\n' "$key" "$value" >> "$tmp"
     mv "$tmp" "$cfg"
-    echo "==> Patched $cfg"
+    echo "==> Patched $cfg ($key)"
 }
 
 # Only the master template + user-level override -- deliberately NOT touching
 # any already-generated PROC_*/ output, since those may belong to a run of
 # create.sh that's still in flight.
-patch_config "$MG5_DIR/input/mg5_configuration.txt"
-patch_config "$HOME/.mg5/mg5_configuration.txt"
+patch_config "$MG5_DIR/input/mg5_configuration.txt" "f2py_compiler_py3" "$WRAPPER"
+patch_config "$HOME/.mg5/mg5_configuration.txt" "f2py_compiler_py3" "$WRAPPER"
 
 echo "==> f2py toolchain fix complete."
+
+# ---------------------------------------------------------------------------
+# LHAPDF6 install, via MG5's own "install lhapdf6" command. Local compile,
+# one network fetch of source -- reproducible, idempotent, safe to rerun.
+#
+# Why via MG5's installer and not e.g. Homebrew: the systematics module
+# (QCD scale + PDF uncertainty reweighting, madgraph/various/systematics.py)
+# does `import lhapdf` *inside whatever python3 process is already running
+# MG5* -- madgraph/various/misc.py's import_python_lhapdf() does the import
+# in-process, not via a subprocess (verified by reading it). A compiled
+# lhapdf python extension is ABI-locked to the exact python3 minor version
+# it was built against. Installing LHAPDF6 via Homebrew would build it
+# against Homebrew's own python (currently python@3.10 here) while MG5 runs
+# under whatever `env python3` resolves to (the system python3 on this
+# machine) -- a cross-interpreter mismatch that would leave `import lhapdf`
+# failing even with a perfectly good install. MG5's own "install lhapdf6"
+# instead builds LHAPDF6's python bindings against the exact python3
+# already running MG5 at install time, sidestepping the ABI problem
+# entirely -- and it's the officially-supported path (madgraph_interface.py
+# even offers it interactively when e.g. installing pythia8's lhapdf
+# dependency). Since create.sh invokes MG5's bin/* scripts the same way
+# (`env python3`), the interpreter at install time and at run time matches.
+#
+# This does need network access once, to fetch LHAPDF6's source and MG5's
+# HEPToolsInstaller manifest from MG5's own package servers, then compiles
+# LHAPDF6 from source (C++, a few minutes) -- there's no vendored/offline
+# tarball for it under MG5_aMC_v2_9_27/vendor/ (unlike CutTools/StdHEP/etc,
+# which do ship offline copies).
+LHAPDF_CONFIG="$MG5_DIR/HEPTools/lhapdf6_py3/bin/lhapdf-config"
+if [ -x "$LHAPDF_CONFIG" ]; then
+    echo "[skip] $LHAPDF_CONFIG already exists -> skipping LHAPDF6 install"
+else
+    echo "==> Installing LHAPDF6 via MG5's own installer (compiles from source, can take several minutes) ..."
+    INSTALL_CMD="$(mktemp "${TMPDIR:-/tmp}/install_lhapdf6.XXXXXX")"
+    printf 'install lhapdf6\n' > "$INSTALL_CMD"
+
+    # LHAPDF's own ./configure auto-detects where to install its python
+    # bindings by asking the running python3's sysconfig for its "platlib"
+    # scheme dir. On this machine python3 resolves to Xcode's bundled
+    # framework python (sys.executable lands under
+    # /Applications/Xcode.app/.../Python3.framework/...), whose sysconfig
+    # reports the *system*, root-owned /Library/Python/3.X/site-packages --
+    # so an unprivileged `make install` fails there with "Permission
+    # denied" partway through (the C++ library/lhapdf-config/PDF-set
+    # machinery all install fine; only this last step needs root, verified
+    # by hitting exactly this failure on a first attempt here).
+    # LHAPDF's configure.ac explicitly supports overriding this via the
+    # LHAPDF_PYTHONPATH env variable (its own notice says so: "override
+    # with LHAPDF_PYTHONPATH env variable") -- point it at a directory
+    # *inside* our own install prefix instead. This isn't just a
+    # workaround: it's exactly the layout MG5's own madgraph/various/
+    # misc.py import_python_lhapdf() already knows how to find on its own
+    # (it scans <lhapdf-config --libdir>/*/site-packages), so no further
+    # wiring is needed for MG5 to pick it up at runtime. Scoped to a
+    # subshell so it doesn't leak into the rest of this script.
+    PYVER="$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
+    LHAPDF_INSTALL_DIR="$MG5_DIR/HEPTools/lhapdf6_py3"
+    (
+        export LHAPDF_PYTHONPATH="$LHAPDF_INSTALL_DIR/lib/python$PYVER/site-packages"
+        "$MG5_DIR/bin/mg5_aMC" "$INSTALL_CMD"
+    )
+    rm -f "$INSTALL_CMD"
+
+    if [ ! -x "$LHAPDF_CONFIG" ]; then
+        echo "ERROR: LHAPDF6 install finished but $LHAPDF_CONFIG is missing." >&2
+        echo "       Check the mg5_aMC output above for the actual failure." >&2
+        exit 1
+    fi
+fi
+echo "    using $("$LHAPDF_CONFIG" --version 2>&1) at $LHAPDF_CONFIG"
+
+# Belt-and-braces: MG5's own "install lhapdf6" already persists this path
+# under the *lhapdf_py3* key (via its internal `save options ... lhapdf_py3`
+# call), but madevent's `systematics` command (do_systematics(), in
+# madgraph/interface/common_run_interface.py) reads the *lhapdf* key -- no
+# _py3 suffix -- which is only ever set in-memory during the install session
+# itself and never written back to mg5_configuration.txt. Patch it in
+# ourselves, same mechanism as f2py_compiler_py3 above, so a *fresh* MG5
+# process (like the ones create.sh launches later for event generation and
+# systematics) resolves it too, not just the one running this install.
+patch_config "$MG5_DIR/input/mg5_configuration.txt" "lhapdf" "$LHAPDF_CONFIG"
+patch_config "$HOME/.mg5/mg5_configuration.txt" "lhapdf" "$LHAPDF_CONFIG"
+
+echo "==> LHAPDF6 install complete."
