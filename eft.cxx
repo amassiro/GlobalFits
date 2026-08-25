@@ -1,4 +1,24 @@
 
+// Pointer to your 2D function
+TF2 *f2_generic = nullptr;
+
+// 1D wrapper function evaluating min_y f(x,y)
+double MinY_Wrapper(double *x, double *p) {
+  double x_val = x[0];
+
+  // Create a temporary 1D function along y for the current x
+  // Limits [ymin, ymax] should match your TF2 range
+  double ymin = f2_generic->GetYmin();
+  double ymax = f2_generic->GetYmax();
+
+  // Define lambda for f_x(y) = f(x_val, y)
+  TF1 fy("fy", [x_val](double *y, double *) { return f2_generic->Eval(x_val, y[0]); }, ymin, ymax, 0);
+
+  // Numerically find minimum along y
+  return fy.GetMinimum(ymin, ymax);
+}
+
+
 
 void eft(){
 
@@ -541,6 +561,39 @@ void eft(){
   //
 
   gPad->SetGrid();
+
+
+  TCanvas *c12_profile_and_2D = new TCanvas("c12_profile_and_2D", "Chi2 cA cB", 1200, 600);
+
+  c12_profile_and_2D->Divide(2,1);
+
+  c12_profile_and_2D->cd(1);
+
+  f_alpha_beta_chi2_2D_shifted->SetTitle("#chi^{2};cA;cB;#chi^{2} (N,cA, cB)");
+  f_alpha_beta_chi2_2D_shifted->SetContour(100);
+  f_alpha_beta_chi2_2D_shifted->SetMaximum(30.0);
+  f_alpha_beta_chi2_2D_shifted->DrawClone("colz");
+
+  TF2 *f_alpha_beta_chi2_2D_shifted_contour_many_contours = (TF2*) f_alpha_beta_chi2_2D_shifted->Clone("f_alpha_beta_chi2_2D_shifted_contour_many_contours");
+
+  double many_levels[10] = {1,2,3,4,5,6,7,8,9,10};
+  f_alpha_beta_chi2_2D_shifted_contour_many_contours->SetContour(10, many_levels);
+
+  f_alpha_beta_chi2_2D_shifted_contour_many_contours->SetLineColor(kRed);
+  f_alpha_beta_chi2_2D_shifted_contour_many_contours->SetLineWidth(3);
+  f_alpha_beta_chi2_2D_shifted_contour_many_contours->SetLineStyle(1);
+
+  f_alpha_beta_chi2_2D_shifted_contour_many_contours->DrawClone("cont3 same");
+
+
+  c12_profile_and_2D->cd(2);
+
+  f2_generic = (TF2*) f_alpha_beta_chi2_2D_shifted->Clone();
+  TF1 *f_alpha_beta_chi2_2D_shifted_profiled = new TF1("f_alpha_beta_chi2_2D_shifted_profiled", MinY_Wrapper, f2_generic->GetXmin(), f2_generic->GetXmax(), 0);
+  f_alpha_beta_chi2_2D_shifted_profiled->SetTitle("min_{cB} #chi2(cA,cB);cA;min_{cB} #chi2(cA,cB)");
+  f_alpha_beta_chi2_2D_shifted_profiled->SetLineColor(kRed);
+
+  f_alpha_beta_chi2_2D_shifted_profiled->Draw();
 
 
 }
