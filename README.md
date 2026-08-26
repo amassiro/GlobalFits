@@ -82,3 +82,18 @@ pylhe
 
 
 
+
+
+Manual with weights:
+
+    ./MG5_aMC_v3_7_2/bin/mg5_aMC
+
+
+    import model SMEFTsim_U35_MwScheme_UFO
+    generate p p >  l+ l-        NP=1
+    output SMEFT_Z_all_weights -f
+    launch SMEFT_Z_all_weights
+
+
+    python3 pylhe_z_pt_weights.py
+
