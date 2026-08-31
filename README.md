@@ -90,7 +90,7 @@ Manual with weights:
 
 
     import model SMEFTsim_U35_MwScheme_UFO
-    generate p p >  l+ l-        NP=1
+    generate p p >  l+ l- j      NP=1
     output SMEFT_Z_all_weights -f
     launch SMEFT_Z_all_weights
 
