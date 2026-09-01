@@ -6,14 +6,7 @@ LHE_FILE = "unweighted_events.lhe"
 PT_BINS = np.array([20, 30, 40, 50, 65, 80, 100, 130, 170, 220, 300, 500])
 LUMI_FB = 300.0
 
-BENCHMARKS = [
-    ("sm", 0.0, 0.0),
-    ("cHl3_p1", 1.0, 0.0),
-    ("cHl3_m1", -1.0, 0.0),
-    ("cll1_p1", 0.0, 1.0),
-    ("cll1_m1", 0.0, -1.0),
-    ("cll1_cHl3_pp", 1.0, 1.0),
-]
+BENCHMARK_NAMES = ["sm", "cHl3_p1", "cHl3_m1", "cll1_p1", "cll1_m1", "cll1_cHl3_pp"]
 
 
 def leading_lepton_pt(event):
@@ -23,7 +16,7 @@ def leading_lepton_pt(event):
 
 def read_cross_sections(lhe_file, bins):
     nbins = len(bins) - 1
-    sumw = {name: np.zeros(nbins) for name, _, _ in BENCHMARKS}
+    sumw = {name: np.zeros(nbins) for name in BENCHMARK_NAMES}
     n_total = 0
     for event in pylhe.LHEFile.fromfile(lhe_file).events:
         n_total += 1
@@ -40,15 +33,22 @@ def read_cross_sections(lhe_file, bins):
     return sumw
 
 
+def quadratic_terms(cHl3, cll1):
+    return np.array([1.0, cHl3, cll1, cHl3 ** 2, cll1 ** 2, cHl3 * cll1])
+
+
 def fit_coefficients(sumw):
-    X = np.array([[1.0, cHl3, cll1, cHl3 ** 2, cll1 ** 2, cHl3 * cll1] for _, cHl3, cll1 in BENCHMARKS])
-    Y = np.array([sumw[name] for name, _, _ in BENCHMARKS])
-    return np.linalg.solve(X, Y)
+    sm = sumw["sm"]
+    lin_cHl3 = 0.5 * (sumw["cHl3_p1"] - sumw["cHl3_m1"])
+    quad_cHl3 = 0.5 * (sumw["cHl3_p1"] + sumw["cHl3_m1"] - 2 * sm)
+    lin_cll1 = 0.5 * (sumw["cll1_p1"] - sumw["cll1_m1"])
+    quad_cll1 = 0.5 * (sumw["cll1_p1"] + sumw["cll1_m1"] - 2 * sm)
+    mixed = sm + sumw["cll1_cHl3_pp"] - sumw["cHl3_p1"] - sumw["cll1_p1"]
+    return np.array([sm, lin_cHl3, lin_cll1, quad_cHl3, quad_cll1, mixed])
 
 
 def predict(theta, cHl3, cll1):
-    sm, lin_cHl3, lin_cll1, quad_cHl3, quad_cll1, mixed = theta
-    return sm + lin_cHl3 * cHl3 + lin_cll1 * cll1 + quad_cHl3 * cHl3 ** 2 + quad_cll1 * cll1 ** 2 + mixed * cHl3 * cll1
+    return quadratic_terms(cHl3, cll1) @ theta
 
 
 def chi2(cHl3, cll1, channels):
